@@ -1,4 +1,2 @@
-db.artefacts.save({"name" : "Wood" , "description" : "Just some wookd","rarity" : "Very Common","ratioTU" : 10})
-db.artefacts.save({"name" : "Mud" , "description" : "Some disgusting mud... gross","rarity" : "Very Common","ratioTU" : 7})
-db.artefacts.save({"name" : "Rock" , "description" : "But Metal is better you know that ?","rarity" : "Very Common","ratioTU" : 4.5})
-db.artefacts.save({"name" : "Gold" , "description" : "Shinny","rarity" : "Rare","ratioTU" : 0.5})
+db.artefacts.save({"name" : "Paper Crown" , "description" : "A powerfull crown ! In paper...","requirement":[{"Paper":50}]})
+db.artefacts.save({"name" : "Mana Geod" , "description" : "A powerfull crown ! In paper...","requirement":[{"Fire Essence":20},{"Wind Essence":20},{"Water Essence":20},{"Medium Gem":10}]})

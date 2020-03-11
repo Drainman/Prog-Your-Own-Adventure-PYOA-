@@ -11,6 +11,8 @@ services :
             - "27017:27017"
         volumes :
             - "./mongo-scripts/artefacts.js:/docker-entrypoint-initdb.d/artefacts.js"
+            - "./mongo-scripts/ressources.js:/docker-entrypoint-initdb.d/ressources.js"
+            - "./mongo-scripts/creatures.js:/docker-entrypoint-initdb.d/creatures.js"
             #- "db_pyoa:/data/db"
 
 # -> Sauvegarde des datas
