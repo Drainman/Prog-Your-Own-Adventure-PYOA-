@@ -33,6 +33,15 @@ router.get('/db_status',(req,res) => {
 	 });
 });
 
+/**
+* @desc : Get back the informations about a specific user.
+* @option : join - Add more informations about artefact, creature or ressources.
+	* @value : owned_artefacts, owned_creatures or/and owned_ressources
+	* @format : ?join=option1;option2
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/user/:userid', (req, res,next) => {
 	//Get ID
 	let id = req.params.userid;
@@ -54,7 +63,7 @@ router.get('/user/:userid', (req, res,next) => {
 
 	//Check if user uses id or name
 	let useName = req.query.usename;
-	if(useName==true)
+	if(useName=="true")
 		var toFind = {"name":id};
 	else{
 		try{var o_id = new mongo.ObjectID(id);}
@@ -259,6 +268,30 @@ router.get('/artefact/:artefactid', (req, res,next) => {
 	mongoFind_Exclude("artefacts",toFind,{},res);
 });
 
+router.get('/artefact/:artefactid/owners', (req, res,next) => {
+	let id = req.params.artefactid
+	id = decodeURIComponent(id)
+	console.log("[INFO] - [GET] => Try to get back the owners of the artefact : "+id+".");
+
+	//Check if user uses id or name
+	let useName = req.query.usename;
+	//If name we can request directly
+	if(useName=='true')
+		getOwners("artefacts",id,res);
+	//We need get back the name
+	else{
+		try{
+			var o_id = new mongo.ObjectID(id);
+			getOwnersByID("artefacts",o_id,res);
+		}
+		catch(error){
+			res.status(400).send({"status":"KO","error":"ID isn't in the right format."});
+			return;
+		}
+	}
+});
+
+
 
 
 app.use(bodyParser.json());
@@ -296,4 +329,64 @@ function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
 			});
 		}
 	 });
+}
+
+
+function getOwners(name_collection,item,res){
+	var exclude = { "projection" :{
+		'current_energy':0,
+		'max_energy' : 0,
+		'current_artefact' :0,
+		'owned_creatures' :0,
+		'owned_ressources' :0,
+		'owned_artefacts' :0,
+		'is_admin' :0,
+	}};
+
+	var str_collection = "owned_" + name_collection
+	var toFind = {};
+	toFind[str_collection] = {$in : [item]}
+
+	var allMatchingOwner = {}
+
+	client.connect(function(err, client) {
+		//Fail
+		if (err)
+			return;
+		//Success
+		else{
+			let db = client.db(dataBaseName);
+			let collection = db.collection("users");
+			collection.find(toFind,exclude).toArray(function(error,documents){
+				if(err) throw error;
+				res.send(documents)
+				allMatchingOwner = documents;
+			});
+		}
+	 });
+}
+
+function getOwnersByID(collection_name,o_id,res){
+
+	str_return = "None";
+	exclude = {}
+	toFind = {"_id":o_id}
+
+	let test = client.connect(function(err, client) {
+		//Fail
+			if (err)
+				return;
+			//Success
+			else{
+				let db = client.db(dataBaseName);
+				let collection = db.collection(collection_name);
+				collection.find(toFind,exclude).toArray(function(error,documents){
+					if(err){ throw error; }
+					else{
+						this_name = documents[0].name;
+						getOwners(collection_name,this_name,res);
+					}
+			});
+		}
+	});
 }
