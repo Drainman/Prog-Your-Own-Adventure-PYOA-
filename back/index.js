@@ -64,7 +64,7 @@ router.get('/db_status',(req,res) => {
 
 	client.connect(function(err) {
 		if (err)
-			res.send({"status" : "error","message" : 'API cant access to the mongo database.'});
+			res.status('503').send({"status" : "error","message" : 'API cant access to the mongo database.'});
 
 		else
 			res.send({"status" : "success","message" : 'API is connecting with mongo database.'});
@@ -143,7 +143,7 @@ router.get('/user/:userid/creature', (req, res,next) => {
 
 	//Check if user uses id or name
 	let useName = req.query.usename;
-	if(useName==true)
+	if(useName=="true")
 		var toFind = {"name":id};
 	else{
 		try{var o_id = new mongo.ObjectID(id);}
@@ -195,7 +195,7 @@ router.get('/user/:userid/ressource', (req, res,next) => {
 	}};
 	//Check if user uses id or name
 	let useName = req.query.usename;
-	if(useName==true)
+	if(useName=="true")
 		var toFind = {"name":id};
 	else{
 		try{var o_id = new mongo.ObjectID(id);}
@@ -232,7 +232,7 @@ router.get('/user/:userid/artefact', (req, res,next) => {
 	}};
 	//Check if user uses id or name
 	let useName = req.query.usename;
-	if(useName==true)
+	if(useName=="true")
 		var toFind = {"name":id};
 	else{
 		try{var o_id = new mongo.ObjectID(id);}
@@ -249,12 +249,12 @@ router.get('/user/:userid/artefact', (req, res,next) => {
 
 /**
 * @desc : Check all the ressources existing in the system.
-* @option : add_rarity - Filter by rarity
+* @option : ararity - Filter by rarity
 	* @value : Very Common, Uncommon, Rare, Very Rare...
-	* @format : ?add_rarity=optionRarity
-* @option : add_name
+	* @format : ?rarity=optionRarity
+* @option : name
 	* @value : A string of your choice
-	* format : ?add_name=optionName
+	* format : ?name=optionName
 */
 router.get('/ressource', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to get back the ressources from the system.");
@@ -501,7 +501,7 @@ function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
 	client.connect(function(err, client) {
 		//Fail
 		if (err)
-			res.send({"status" : "error","message" : 'API cant access to the mongo database.'});
+			res.status('503').send({"status" : "error","message" : 'API cant access to the mongo database.'});
 		//Success
 		else{
 			let db = client.db(dataBaseName);
@@ -511,7 +511,7 @@ function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
 				else if(documents.length > 0)
 					res.send(documents)
 				else
-					res.status(404).send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
+					res.status('404').send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
 			});
 		}
 	 });
