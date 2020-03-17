@@ -1,13 +1,51 @@
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*							CONST & MODULE JSON								*/
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
 const express = require('express');
 const app = express();
 const router = express.Router();
 const bodyParser = require("body-parser");
+var Validator = require('jsonschema').Validator;
+var validate = require('jsonschema').validate;
 /* - MONGO CONSTANT */
 const mongo = require("mongodb");
 const MongoClient = mongo.MongoClient;
 const mongoURL = "mongodb://localhost:27017/";
 const client = MongoClient(mongoURL,{ useUnifiedTopology: true });
 const dataBaseName = "pyoa";
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*								SCHEMA JSON									*/
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+const sh_creatures_artefacts  = {
+	"type" : "object",
+	"properties": {
+		"name": {"type": "string"},
+		"description" :{"type": "string"},
+		"requirement": {
+			"type" : "array",
+			"minItems": 1,
+			"items" : {
+				"type" : "object",
+				"properties" : {
+					"name" : {"type" : "string"},
+					"qty" : {"type" : "integer"}
+				},
+				"required" : ["name","qty"]
+			}
+		}
+	},
+	"required" : ["name","description","requirement"]
+};
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*								API REQUEST 								*/
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
 
 /**
 * @desc : Check if application is available.
@@ -35,6 +73,7 @@ router.get('/db_status',(req,res) => {
 
 /**
 * @desc : Get back the informations about a specific user.
+* @param : userid - The user id or his name
 * @option : join - Add more informations about artefact, creature or ressources.
 	* @value : owned_artefacts, owned_creatures or/and owned_ressources
 	* @format : ?join=option1;option2
@@ -77,6 +116,19 @@ router.get('/user/:userid', (req, res,next) => {
 	mongoFind_Exclude("users",toFind,exclude,res);
 });
 
+
+
+router.delete('/user/:userid', (req, res,next) => {
+
+});
+
+/**
+* @desc : Get all the creatures belonged to a specific user.
+* @param : userid - The user id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/user/:userid/creature', (req, res,next) => {
 	let id = req.params.userid;
 
@@ -105,14 +157,29 @@ router.get('/user/:userid/creature', (req, res,next) => {
 	mongoFind_Exclude("users",toFind,exclude,res);
 });
 
-/* POST */
+/* POST -> TODO */
 router.post('/user/:userid/creature', (req, res,next) => {
 	let id = req.params.userid;
 	console.log("[INFO] - [POST] => Try to summon a creatures for "+ id +".");
 	let tmpBdy = req.body;
+	//Analyse the body
+	if(tmpBdy.name && tmpBdy.description){
+		console.log("VALID")
+	}
+	else {
+		console.log("INVALID")
+	}
+
 	res.send({"status":"success","userid":id,"creatures":"Miaou !","s_object":tmpBdy});
 });
 
+/**
+* @desc : Get all the ressources belonged to a specific user.
+* @param : userid - The user id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/user/:userid/ressource', (req, res,next) => {
 	//Get ID
 	let id = req.params.userid;
@@ -143,6 +210,13 @@ router.get('/user/:userid/ressource', (req, res,next) => {
 });
 
 
+/**
+* @desc : Get all the artefacts belonged to a specific user.
+* @param : userid - The user id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/user/:userid/artefact', (req, res,next) => {
 	//Get ID
 	let id = req.params.userid;
@@ -173,6 +247,15 @@ router.get('/user/:userid/artefact', (req, res,next) => {
 });
 
 
+/**
+* @desc : Check all the ressources existing in the system.
+* @option : add_rarity - Filter by rarity
+	* @value : Very Common, Uncommon, Rare, Very Rare...
+	* @format : ?add_rarity=optionRarity
+* @option : add_name
+	* @value : A string of your choice
+	* format : ?add_name=optionName
+*/
 router.get('/ressource', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to get back the ressources from the system.");
 	// Prepare the request to ask
@@ -197,6 +280,12 @@ router.get('/ressource', (req, res,next) => {
 });
 
 
+/**
+* @desc : Check all the creatures existing in the system.
+* @option : add_name
+	* @value : A string of your choice
+	* format : ?name=optionName
+*/
 router.get('/creature', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to get back the creature from the system.");
 	// Prepare the request to ask
@@ -212,6 +301,31 @@ router.get('/creature', (req, res,next) => {
 });
 
 
+/**
+* @desc : Insert a new creature in the system.
+* @return : The creature object if it is created.
+*/
+router.post('/creature', (req, res,next) => {
+	console.log("[INFO] - [POST] => Try to add a creature.");
+	let tmpBdy = req.body;
+
+	//Analyse the body
+	let validation_o = validate(tmpBdy,sh_creatures_artefacts);
+	if(validation_o.errors.length > 0)
+		res.status("400").send({"status":"KO","msg":"Invalid request format."});
+	else
+		insertDB(tmpBdy,"creatures",res);
+});
+
+
+
+/**
+* @desc : Get a specific creature.
+* @param : creatureid - The creature id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/creature/:creatureid', (req, res,next) => {
 	//GET ID
 	let id = req.params.creatureid
@@ -233,6 +347,44 @@ router.get('/creature/:creatureid', (req, res,next) => {
 	mongoFind_Exclude("creatures",toFind,{},res);
 });
 
+
+/**
+* @desc : Get the owners of a specific creatures.
+* @param : artefactid - The artefact id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
+router.get('/creature/:creatureid/owners', (req, res,next) => {
+	let id = req.params.creatureid
+	id = decodeURIComponent(id)
+	console.log("[INFO] - [GET] => Try to get back the owners of the creatures : "+id+".");
+
+	//Check if user uses id or name
+	let useName = req.query.usename;
+	//If name we can request directly
+	if(useName=='true')
+		getOwners("creatures",id,res);
+	//We need get back the name
+	else{
+		try{
+			var o_id = new mongo.ObjectID(id);
+			getOwnersByID("creatures",o_id,res);
+		}
+		catch(error){
+			res.status(400).send({"status":"KO","error":"ID isn't in the right format."});
+			return;
+		}
+	}
+});
+
+
+/**
+* @desc : Check all the artefacts existing in the system.
+* @option : add_name
+	* @value : A string of your choice
+	* @format : ?name=optionName
+*/
 router.get('/artefact', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to get back the artefacts from the system.");
 	// Prepare the request to ask
@@ -248,6 +400,29 @@ router.get('/artefact', (req, res,next) => {
 });
 
 
+/**
+* @desc : Insert a new artefact in the system.
+* @return : The creature object if it is created.
+*/
+router.post('/artefact', (req, res,next) => {
+	console.log("[INFO] - [POST] => Try to add a new artefact.");
+	let tmpBdy = req.body;
+
+	//Analyse the body
+	let validation_o = validate(tmpBdy,sh_creatures_artefacts);
+	if(validation_o.errors.length > 0)
+		res.status("400").send({"status":"KO","msg":"Invalid request format."});
+	else
+		insertDB(tmpBdy,"artefacts",res);
+});
+
+/**
+* @desc : Get a specific artefact.
+* @param : artefactid - The artefact id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/artefact/:artefactid', (req, res,next) => {
 	let id = req.params.artefactid
 	console.log("[INFO] - [GET] => Try to get back the artefact : "+id+".");
@@ -268,6 +443,14 @@ router.get('/artefact/:artefactid', (req, res,next) => {
 	mongoFind_Exclude("artefacts",toFind,{},res);
 });
 
+
+/**
+* @desc : Get the owners of a specific artefact.
+* @param : artefactid - The artefact id or his name.
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
 router.get('/artefact/:artefactid/owners', (req, res,next) => {
 	let id = req.params.artefactid
 	id = decodeURIComponent(id)
@@ -325,7 +508,10 @@ function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
 			let collection = db.collection(name_collection);
 			collection.find(toFind,exclude).toArray(function(error,documents){
 				if(err) throw error;
-				res.send(documents)
+				else if(documents.length > 0)
+					res.send(documents)
+				else
+					res.status(404).send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
 			});
 		}
 	 });
@@ -359,8 +545,10 @@ function getOwners(name_collection,item,res){
 			let collection = db.collection("users");
 			collection.find(toFind,exclude).toArray(function(error,documents){
 				if(err) throw error;
-				res.send(documents)
-				allMatchingOwner = documents;
+				else if(documents.length>0)
+					res.send(documents)
+				else
+					res.status(404).send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
 			});
 		}
 	 });
@@ -383,9 +571,37 @@ function getOwnersByID(collection_name,o_id,res){
 				collection.find(toFind,exclude).toArray(function(error,documents){
 					if(err){ throw error; }
 					else{
-						this_name = documents[0].name;
-						getOwners(collection_name,this_name,res);
+						if(documents.length > 0){
+							this_name = documents[0].name;
+							getOwners(collection_name,this_name,res);
+						}
+						else
+							res.status(404).send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
 					}
+			});
+		}
+	});
+}
+
+
+
+function insertDB(to_insert,collection_name,res){
+
+	client.connect(function(err, client) {
+		if (err){
+			res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+			throw err; }
+		else{
+			let db = client.db(dataBaseName);
+			let collection = db.collection(collection_name);
+			collection.insertOne(to_insert, function(err,rep){
+				if(err){
+					res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+					throw err;
+				}
+				console.log("[INFO] - [INSERT] - A new entry has been added in : "+collection_name);
+				//Send the insertion
+				res.send(rep.ops[0]);
 			});
 		}
 	});
