@@ -14,7 +14,12 @@ const MongoClient = mongo.MongoClient;
 const mongoURL = "mongodb://localhost:27017/";
 const client = MongoClient(mongoURL,{ useUnifiedTopology: true });
 const dataBaseName = "pyoa";
-
+/* AUTH CONSTANT */
+var jwt = require('jsonwebtoken');
+var bcrypt = require('bcryptjs');
+const mySuperSecretSpecialKey = "redPandaEatBamboo"; //Replace here
+// > carreful, if you change this key, the two default users will not work properly.
+const tokenTimer = 86400; //token for 24 hours
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /*								SCHEMA JSON									*/
@@ -72,6 +77,90 @@ router.get('/db_status',(req,res) => {
 });
 
 /**
+* @desc : Register a new user.
+*/
+router.post('/auth/register',function(req,res){
+
+	var hashedPassword = bcrypt.hashSync(req.body.password,8);
+	//var to_insert = {"name" : req.body.name, "password" : hashedPassword};
+	var to_insert = userToCreate(req.body.name,hashedPassword);
+
+	client.connect(function(err, client) {
+		if (err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+		else{
+			let db = client.db(dataBaseName);
+			let collection = db.collection("users");
+			collection.insertOne(to_insert, function(err,rep){
+				if(err){
+					res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+					throw err;
+				}
+				console.log("[INFO] - [INSERT] - A new user has been added : " + req.body.name);
+				var token = jwt.sign({id:rep.ops[0]._id},mySuperSecretSpecialKey,{expiresIn:tokenTimer});
+				//Send the insertion
+				res.send({auth:true,token:token});
+			});
+		}
+	});
+});
+
+/*
+* @desc : Get back info about current user.
+*/
+router.get('/auth/me',verifyToken,function(req,res,next){
+	client.connect(function(err, client) {
+		if (err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+		//else
+		let db = client.db(dataBaseName);
+		let collection = db.collection("users");
+		let o_id = new mongo.ObjectID(req.userId);
+		let toFind = {_id : o_id};
+
+		var exclude = { "projection" : {
+			'password':0,
+			'owned_creatures' : 0,
+			'owned_artefacts' : 0,
+			'owned_ressources' : 0
+		}};
+
+		collection.findOne(toFind,exclude, function(err,rep){
+			if(err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+			if(!rep) return res.status('404').send("No user found.");
+			res.send(rep);
+		});
+	});
+});
+
+/**
+* @desc : Login in application. Give a token you have to use for some requests.
+*/
+router.post('/auth/login',function(req,res){
+
+	let toFind = {name:req.body.name};
+
+	client.connect(function(err, client) {
+		if (err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+		//else
+		let db = client.db(dataBaseName);
+		let collection = db.collection("users");
+
+		collection.findOne(toFind, function(err,rep){
+			if(err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+			if(!rep) return res.status('404').send("No user found.");
+
+			var passWordIsValid = bcrypt.compareSync(req.body.password,rep.password);
+			if(!passWordIsValid) return res.status(401).send({auth:false,token:null});
+
+			var token = jwt.sign({id:rep._id},mySuperSecretSpecialKey,{expiresIn:tokenTimer});
+			res.send({auth:true,token:token});
+		});
+	});
+
+});
+
+
+
+/**
 * @desc : Get back the informations about a specific user.
 * @param : userid - The user id or his name
 * @option : join - Add more informations about artefact, creature or ressources.
@@ -87,6 +176,7 @@ router.get('/user/:userid', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to acces to the informatiosn about "+ id +".");
 	//Exclusion
 	var exclude = { "projection" :{
+		'password':0,
 		'owned_artefacts':0,
 		'owned_creatures' : 0,
 		'owned_ressources' :0
@@ -133,6 +223,7 @@ router.get('/user/:userid/creature', (req, res,next) => {
 	let id = req.params.userid;
 
 	var exclude = { "projection" :{
+		'password':0,
 		'current_energy':0,
 		'max_energy' : 0,
 		'current_artefact' :0,
@@ -158,19 +249,62 @@ router.get('/user/:userid/creature', (req, res,next) => {
 });
 
 /* POST -> TODO */
-router.post('/user/:userid/creature', (req, res,next) => {
+router.post('/user/:userid/creature', verifyToken, async (req, res,next) => {
 	let id = req.params.userid;
-	console.log("[INFO] - [POST] => Try to summon a creatures for "+ id +".");
 	let tmpBdy = req.body;
+
+	//Check if the summoner is the user of the targeted account.
+	if(req.userId != id) return res.status(403).send({auth:false,"message":"You aren't the user of this account."});
+
+	console.log("[INFO] - [POST] => Try to summon a creatures for "+ id +".");
 	//Analyse the body
-	if(tmpBdy.name && tmpBdy.description){
-		console.log("VALID")
-	}
-	else {
-		console.log("INVALID")
+	if(tmpBdy.creature_id){
+		//1. Get the creature informations
+		try{var o_id = new mongo.ObjectID(tmpBdy.creature_id);}
+		catch(error){return res.status(400).send({"status":"KO","error":"Creature ID isn't in the right format."});}
+		var findCreature = {"_id":o_id};
+		var creature = await getCreatureRequirements(findCreature);
+		if(creature==null) return res.status(404).send({"status":"404","message":"Creature not found."});
+		//2. Get the ressource of the summoner
+		try{var o_id_u = new mongo.ObjectID(req.userId);}
+		catch(error){return res.status(400).send({"status":"KO","error":"User ID isn't in the right format."});}
+		var findUser = {"_id":o_id_u};
+		var userInfo = await sync_getUserInfo(findUser);
+		if(userInfo==null) return res.status(404).send({"status":"404","message":"User not found."});
+		// 2b. Check if the user have already this monster
+		if(userInfo.owned_creatures.includes(creature.name))
+			return res.status(403).send({status:"403 - Forbidden","message" :"User already have this creature."});
+
+		//3. Check if summoner have enough ressources
+		let canSummon = true;
+		let creatureRequirements = creature.requirement;
+		let userRessouces = userInfo.owned_ressources;
+		for(var it=0;it<creatureRequirements.length;it++){
+			let aRequire = creatureRequirements[it];
+			let haveThisRequirement = false;
+			for(var itU=0;itU<userRessouces.length;itU++){
+				let aRessource = userRessouces[itU];
+				if(aRequire.name == aRessource.name &&
+					aRequire.units < aRessource.units){
+					haveThisRequirement = true;
+					break;
+				}
+			}
+			canSummon = canSummon && haveThisRequirement;
+		}
+		//	-> YES : Add the creature name in the list of owned_creatures
+		if(canSummon){
+			console.log("[INFO] ~ User can summon the requested creature : "+ creature.name +".");
+			updateUserCreatures(findUser,creature.name);
+			//UpdateRessouce ???
+			return res.send(await sync_getUserInfo(findUser));
+		}
+		// 	-> NO  : send-> not enough ressources
+		else return res.status(403).send({"status":"403","message":"You don't have the requirements to summon this creature."});
+
 	}
 
-	res.send({"status":"success","userid":id,"creatures":"Miaou !","s_object":tmpBdy});
+	else return res.status(400).send({"status":"KO","message":"Invalid request format. Please check your body."});
 });
 
 /**
@@ -186,6 +320,7 @@ router.get('/user/:userid/ressource', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to acces to the ressources of "+ id +".");
 	//Prepare exclusion
 	var exclude = { "projection" :{
+		'password':0,
 		'current_energy':0,
 		'max_energy' : 0,
 		'current_artefact' :0,
@@ -223,6 +358,7 @@ router.get('/user/:userid/artefact', (req, res,next) => {
 	console.log("[INFO] - [GET] => Try to acces to the artefacts of "+ id +".");
 	//Prepare exclusion
 	var exclude = { "projection" :{
+		'password':0,
 		'current_energy':0,
 		'max_energy' : 0,
 		'current_artefact' :0,
@@ -520,6 +656,7 @@ function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
 
 function getOwners(name_collection,item,res){
 	var exclude = { "projection" :{
+		'password':0,
 		'current_energy':0,
 		'max_energy' : 0,
 		'current_artefact' :0,
@@ -560,7 +697,7 @@ function getOwnersByID(collection_name,o_id,res){
 	exclude = {}
 	toFind = {"_id":o_id}
 
-	let test = client.connect(function(err, client) {
+	client.connect(function(err, client) {
 		//Fail
 			if (err)
 				return;
@@ -605,4 +742,71 @@ function insertDB(to_insert,collection_name,res){
 			});
 		}
 	});
+}
+
+
+function verifyToken(req,res,next){
+	var token = req.headers['x-access-token'];
+	if(!token) return res.status(403).send({auth:false,message:"No token provided."});
+
+	jwt.verify(token,mySuperSecretSpecialKey,function(err,decoded){
+		if(err) res.status(500).send({auth:false, message:"Failed to authenticate token."});
+		req.userId = decoded.id;
+		next();
+	});
+}
+
+function userToCreate(name,pass){
+
+	return {
+		"name" : name ,
+		"password" : pass,
+		"current_energy" : 25,
+		"max_energy" : 25,
+		"current_artefact" : null,
+		"owned_ressources" : [],
+		"owned_creatures" : [],
+		"owned_artefacts" : [],
+		"is_admin" : false
+	}
+}
+
+
+async function getCreatureRequirements(o_find){
+	let result = null;
+	const t = await client.connect();
+	let db = await client.db(dataBaseName);
+	let collection = await db.collection("creatures");
+	const res = await collection.find(o_find).toArray();
+	if(res.length>0) result = res[0];
+	return result;
+}
+
+async function sync_getUserInfo(o_find){
+
+	var exclude = { "projection" :{
+		'password':0,
+		'current_artefact' :0,
+		'owned_artefacts' :0,
+		'is_admin' :0
+	}};
+
+
+	let result = null;
+	const t = await client.connect();
+	let db = await client.db(dataBaseName);
+	let collection = await db.collection("users");
+	const res = await collection.find(o_find).toArray();
+	if(res.length>0) result = res[0];
+	return result;
+}
+
+async function updateUserCreatures(userID,creature_name){
+	let toUpdate = { $push: { owned_creatures: creature_name } };
+	let result = null;
+	const t = await client.connect();
+	let db = await client.db(dataBaseName);
+	let collection = await db.collection("users");
+
+	const res = await collection.update(userID,toUpdate);
 }

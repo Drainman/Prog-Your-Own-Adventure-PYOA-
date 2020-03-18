@@ -1,5 +1,6 @@
 db.users.save({
 	"name" : "Kurai" ,
+	"password" : "$2a$08$GON44RMeBX1M8sWkzMm1Ueqq1C1X4S876v9cNof3pFb7rxhrkOTQi",
 	"current_energy" : 100,
 	"max_energy" : 100,
 	"current_artefact" : null,
@@ -22,6 +23,7 @@ db.users.save({
 
 db.users.save({
 	"name" : "Red Panda" ,
+	"password" : "$2a$08$TyTt9OqBK6CvQQ/A85moKuiL7XXfe9h2FeqZ32Ez2xu2mysVzI.pW",
 	"current_energy" : 100,
 	"max_energy" : 100,
 	"current_artefact" : null,
