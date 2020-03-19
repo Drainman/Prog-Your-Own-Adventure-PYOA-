@@ -29,10 +29,11 @@ db.users.save({
 	"current_artefact" : null,
 	"owned_ressources" : [
 		{"name" : "Paper","units" : 100},
-		{"name" : "Bamboo","units" : 20000}
+		{"name" : "Bamboo","units" : 20000},
+		{"name" : "Metal","units" : 150}
 	],
 	"owned_creatures" : [
-		"Red Panda","Iron Brigadier","Ancient Golem"
+		"Red Panda","Ancient Golem"
 	],
 	"owned_artefacts" : [
 		"Paper Crown","Mana Geod"

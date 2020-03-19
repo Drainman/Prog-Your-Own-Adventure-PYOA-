@@ -287,6 +287,8 @@ router.post('/user/:userid/creature', verifyToken, async (req, res,next) => {
 				if(aRequire.name == aRessource.name &&
 					aRequire.units < aRessource.units){
 					haveThisRequirement = true;
+					let remainRessource = aRessource.units - aRequire.units
+					userRessouces[itU] = {name : aRessource.name,units : remainRessource}
 					break;
 				}
 			}
@@ -295,8 +297,8 @@ router.post('/user/:userid/creature', verifyToken, async (req, res,next) => {
 		//	-> YES : Add the creature name in the list of owned_creatures
 		if(canSummon){
 			console.log("[INFO] ~ User can summon the requested creature : "+ creature.name +".");
-			updateUserCreatures(findUser,creature.name);
-			//UpdateRessouce ???
+			await updateUserCreatures(findUser,creature.name);
+			await updateUserRessource(findUser,userRessouces);
 			return res.send(await sync_getUserInfo(findUser));
 		}
 		// 	-> NO  : send-> not enough ressources
@@ -796,13 +798,23 @@ async function sync_getUserInfo(o_find){
 	const t = await client.connect();
 	let db = await client.db(dataBaseName);
 	let collection = await db.collection("users");
-	const res = await collection.find(o_find).toArray();
+	const res = await collection.find(o_find,exclude).toArray();
 	if(res.length>0) result = res[0];
 	return result;
 }
 
 async function updateUserCreatures(userID,creature_name){
 	let toUpdate = { $push: { owned_creatures: creature_name } };
+	let result = null;
+	const t = await client.connect();
+	let db = await client.db(dataBaseName);
+	let collection = await db.collection("users");
+
+	const res = await collection.update(userID,toUpdate);
+}
+
+async function updateUserRessource(userID,ressourceUpdate){
+	let toUpdate = { $set : { owned_ressources : ressourceUpdate }};
 	let result = null;
 	const t = await client.connect();
 	let db = await client.db(dataBaseName);
