@@ -81,18 +81,20 @@ router.get('/db_status',(req,res) => {
 */
 router.post('/auth/register',function(req,res){
 
+	if(!req.body.password || !req.body.name)
+		return res.status(400).send({status:"400 - Invalid Request",message:"Please check the body of your request."})
+
 	var hashedPassword = bcrypt.hashSync(req.body.password,8);
-	//var to_insert = {"name" : req.body.name, "password" : hashedPassword};
 	var to_insert = userToCreate(req.body.name,hashedPassword);
 
 	client.connect(function(err, client) {
-		if (err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+		if (err) return res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 		else{
 			let db = client.db(dataBaseName);
 			let collection = db.collection("users");
 			collection.insertOne(to_insert, function(err,rep){
 				if(err){
-					res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+					res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 					throw err;
 				}
 				console.log("[INFO] - [INSERT] - A new user has been added : " + req.body.name);
@@ -109,7 +111,7 @@ router.post('/auth/register',function(req,res){
 */
 router.get('/auth/me',verifyToken,function(req,res,next){
 	client.connect(function(err, client) {
-		if (err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+		if (err) return res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 		//else
 		let db = client.db(dataBaseName);
 		let collection = db.collection("users");
@@ -124,7 +126,7 @@ router.get('/auth/me',verifyToken,function(req,res,next){
 		}};
 
 		collection.findOne(toFind,exclude, function(err,rep){
-			if(err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+			if(err) return res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 			if(!rep) return res.status('404').send("No user found.");
 			res.send(rep);
 		});
@@ -139,13 +141,13 @@ router.post('/auth/login',function(req,res){
 	let toFind = {name:req.body.name};
 
 	client.connect(function(err, client) {
-		if (err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+		if (err) return res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 		//else
 		let db = client.db(dataBaseName);
 		let collection = db.collection("users");
 
 		collection.findOne(toFind, function(err,rep){
-			if(err) return res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+			if(err) return res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 			if(!rep) return res.status('404').send("No user found.");
 
 			var passWordIsValid = bcrypt.compareSync(req.body.password,rep.password);
@@ -450,7 +452,7 @@ router.post('/creature', (req, res,next) => {
 	//Analyse the body
 	let validation_o = validate(tmpBdy,sh_creatures_artefacts);
 	if(validation_o.errors.length > 0)
-		res.status("400").send({"status":"KO","msg":"Invalid request format."});
+		res.status("400").send({"status":"KO","message":"Invalid request format."});
 	else
 		insertDB(tmpBdy,"creatures",res);
 });
@@ -549,7 +551,7 @@ router.post('/artefact', (req, res,next) => {
 	//Analyse the body
 	let validation_o = validate(tmpBdy,sh_creatures_artefacts);
 	if(validation_o.errors.length > 0)
-		res.status("400").send({"status":"KO","msg":"Invalid request format."});
+		res.status("400").send({"status":"KO","message":"Invalid request format."});
 	else
 		insertDB(tmpBdy,"artefacts",res);
 });
@@ -649,7 +651,7 @@ function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
 				else if(documents.length > 0)
 					res.send(documents)
 				else
-					res.status('404').send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
+					res.status('404').send({"status" : "NOT_FOUND","message":"There are no element for this request."});
 			});
 		}
 	 });
@@ -687,7 +689,7 @@ function getOwners(name_collection,item,res){
 				else if(documents.length>0)
 					res.send(documents)
 				else
-					res.status(404).send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
+					res.status(404).send({"status" : "NOT_FOUND","message":"There are no element for this request."});
 			});
 		}
 	 });
@@ -715,7 +717,7 @@ function getOwnersByID(collection_name,o_id,res){
 							getOwners(collection_name,this_name,res);
 						}
 						else
-							res.status(404).send({"status" : "NOT_FOUND","msg":"There are no element for this request."});
+							res.status(404).send({"status" : "NOT_FOUND","message":"There are no element for this request."});
 					}
 			});
 		}
@@ -728,14 +730,14 @@ function insertDB(to_insert,collection_name,res){
 
 	client.connect(function(err, client) {
 		if (err){
-			res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+			res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 			throw err; }
 		else{
 			let db = client.db(dataBaseName);
 			let collection = db.collection(collection_name);
 			collection.insertOne(to_insert, function(err,rep){
 				if(err){
-					res.status("520").send({"status":"KO","msg":"Unknow error with the mongo DB."});
+					res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 					throw err;
 				}
 				console.log("[INFO] - [INSERT] - A new entry has been added in : "+collection_name);
