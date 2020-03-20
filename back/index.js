@@ -209,9 +209,32 @@ router.get('/user/:userid', (req, res,next) => {
 });
 
 
-
-router.delete('/user/:userid', (req, res,next) => {
-
+/**
+* @desc : Delete a user (admin only)
+* @param : userid - The user to Delete
+* @option : usename - Use this option if you use the name object instead of the id.
+	* @value : true or false
+	* @format : ?usename=true
+*/
+router.delete('/user/:userid',verifyToken,async function(req, res,next){
+	let id = req.params.userid;
+	//Check if user uses id or name
+	let useName = req.query.usename;
+	if(useName=="true")
+		var toFind = {"name":id};
+	else{
+		try{var o_id = new mongo.ObjectID(id);}
+		catch(error){
+			return res.status(400).send({"status":"KO","error":"ID isn't in the right format."});
+		}
+		var toFind = {"_id":o_id}
+	}
+	//If admin delete, else error
+	let userInfo = await sync_getUserInfo(toFind);
+	if(userInfo.is_admin)
+		mongo_delete("users",toFind,res);
+	else
+		return res.status(403).send({status:"403 - Forbidden",message:"Only admin can delete an user."});
 });
 
 /**
@@ -250,7 +273,10 @@ router.get('/user/:userid/creature', (req, res,next) => {
 	mongoFind_Exclude("users",toFind,exclude,res);
 });
 
-/* POST -> TODO */
+/**
+* @desc : Summon a creature for the specified user. Must use the id.
+* @param : userid - The specified user.
+*/
 router.post('/user/:userid/creature', verifyToken, async (req, res,next) => {
 	let id = req.params.userid;
 	let tmpBdy = req.body;
@@ -265,7 +291,7 @@ router.post('/user/:userid/creature', verifyToken, async (req, res,next) => {
 		try{var o_id = new mongo.ObjectID(tmpBdy.creature_id);}
 		catch(error){return res.status(400).send({"status":"KO","error":"Creature ID isn't in the right format."});}
 		var findCreature = {"_id":o_id};
-		var creature = await getCreatureRequirements(findCreature);
+		var creature = await sync_getCreatureInfo(findCreature);
 		if(creature==null) return res.status(404).send({"status":"404","message":"Creature not found."});
 		//2. Get the ressource of the summoner
 		try{var o_id_u = new mongo.ObjectID(req.userId);}
@@ -402,7 +428,7 @@ router.get('/ressource', (req, res,next) => {
 	var toFind = {}
 	var toFind_rare = {};
 	var toFind_name = {};
-	//TO ADD IN DOC
+
 	let add_rarity = req.query.rarity;
 	let add_name = req.query.name;
 
@@ -431,7 +457,6 @@ router.get('/creature', (req, res,next) => {
 	// Prepare the request to ask
 	var toFind = {}
 
-	//TO ADD IN DOC
 	let add_name = req.query.name;
 	if(add_name)
 		toFind = {"name" : new RegExp(add_name)};
@@ -530,7 +555,6 @@ router.get('/artefact', (req, res,next) => {
 	// Prepare the request to ask
 	var toFind = {}
 
-	//TO ADD IN DOC
 	let add_name = req.query.name;
 	if(add_name)
 		toFind = {"name" : new RegExp(add_name)};
@@ -633,31 +657,63 @@ app.listen(3000, err => {
 });
 
 
+/**
+* @desc : Default function to find (+ projection) some documents in mongoDB
+* @param : name_collection - String - The colletion in wich we have to looking for.
+* @param : o_find - Object - Object used to find the desired documents
+* @param : o_exclude - Object - Projection = Fields to ignore in the resquest.
+* @param : res - Object - Response object.
+*/
 function mongoFind_Exclude(name_collection,o_find,o_exclude,res){
-
 	var toFind = o_find;
 	var exclude = o_exclude;
 
 	client.connect(function(err, client) {
 		//Fail
-		if (err)
-			res.status('503').send({"status" : "error","message" : 'API cant access to the mongo database.'});
+		if (err) return res.status('503').send({"status" : "error","message" : 'API cant access to the mongo database.'});
 		//Success
 		else{
 			let db = client.db(dataBaseName);
 			let collection = db.collection(name_collection);
 			collection.find(toFind,exclude).toArray(function(error,documents){
 				if(err) throw error;
-				else if(documents.length > 0)
-					res.send(documents)
-				else
-					res.status('404').send({"status" : "NOT_FOUND","message":"There are no element for this request."});
+				else if(documents.length > 0) return res.send(documents)
+				else return res.status('404').send({"status" : "NOT_FOUND","message":"There are no element for this request."});
+			});
+		}
+	 });
+}
+
+/**
+* @desc : Default function to delete something with mongoDB
+* @param : name_collection - String - Collection in wich we have to looking for.
+* @param : o_delete - Object - Object used to identify the document to delete.
+* @param : res - Object - Response object.
+*/
+function mongo_delete(name_collection,o_delete,res){
+	var toDelete = o_delete;
+	client.connect(function(err, client) {
+		//Fail
+		if (err) return res.status('503').send({"status" : "error","message" : 'API cant access to the mongo database.'});
+		//Success
+		else{
+			let db = client.db(dataBaseName);
+			let collection = db.collection(name_collection);
+			collection.deleteOne(toDelete, function(error,document){
+				if(err) return res.status('503').send({"status" : "Unknow Error","message":"You're request failed."});
+				else return res.send({status:"OK",message:"The requested user has been deleted."});
 			});
 		}
 	 });
 }
 
 
+/**
+* @desc : Get the owners for a specified object (use name).
+* @param : name_collection - String - The collection in wich we have to looking for.
+* @param : item - Object - Concerning item = creature or artefact name
+* @param : res - Object - Response object.
+*/
 function getOwners(name_collection,item,res){
 	var exclude = { "projection" :{
 		'password':0,
@@ -695,16 +751,19 @@ function getOwners(name_collection,item,res){
 	 });
 }
 
+/**
+* @desc : Get the owners for a specified object (use ID).
+* @param : collection_name - String - The collection in wich we have to looking for.
+* @param : o_id - Object - Object ID to identify the desired user.
+* @param : res - Object - Response object.
+*/
 function getOwnersByID(collection_name,o_id,res){
-
-	str_return = "None";
 	exclude = {}
 	toFind = {"_id":o_id}
 
 	client.connect(function(err, client) {
 		//Fail
-			if (err)
-				return;
+			if (err) return res.status("520").send({"status":"KO","message":"Unknow error with the mongo DB."});
 			//Success
 			else{
 				let db = client.db(dataBaseName);
@@ -712,12 +771,8 @@ function getOwnersByID(collection_name,o_id,res){
 				collection.find(toFind,exclude).toArray(function(error,documents){
 					if(err){ throw error; }
 					else{
-						if(documents.length > 0){
-							this_name = documents[0].name;
-							getOwners(collection_name,this_name,res);
-						}
-						else
-							res.status(404).send({"status" : "NOT_FOUND","message":"There are no element for this request."});
+						if(documents.length > 0) getOwners(collection_name,documents[0].name,res);
+						else return res.status(404).send({"status" : "NOT_FOUND","message":"There are no element for this request."});
 					}
 			});
 		}
@@ -725,7 +780,12 @@ function getOwnersByID(collection_name,o_id,res){
 }
 
 
-
+/**
+* @desc : Default request to insert somthing in the mongo database.
+* @param : to_insert - Object - Document to insert in the database.
+* @param : collection_name - String - Concerning collection in wich we want insert the document.
+* @param : res - Object - Response object.
+*/
 function insertDB(to_insert,collection_name,res){
 
 	client.connect(function(err, client) {
@@ -748,7 +808,12 @@ function insertDB(to_insert,collection_name,res){
 	});
 }
 
-
+/**
+* @desc : Middleware used to check if the given token is a verify one.
+* @param : req - Object - The original request
+* @param : res - Object - The response object.
+* @param : next - Object - For the Middleware.
+*/
 function verifyToken(req,res,next){
 	var token = req.headers['x-access-token'];
 	if(!token) return res.status(403).send({auth:false,message:"No token provided."});
@@ -760,6 +825,12 @@ function verifyToken(req,res,next){
 	});
 }
 
+/**
+* @desc : Create a new user default object.
+* @param : name - String - The name to use for this user.
+* @param : pass - String - The hashed password for this user.
+* @return : Object User - A default user fill with the given name and password.
+*/
 function userToCreate(name,pass){
 
 	return {
@@ -776,7 +847,11 @@ function userToCreate(name,pass){
 }
 
 
-async function getCreatureRequirements(o_find){
+/**
+* @desc : Get creature info in sync mod (block)
+* @param : o_find - Object - Object used to find the creature.
+*/
+async function sync_getCreatureInfo(o_find){
 	let result = null;
 	const t = await client.connect();
 	let db = await client.db(dataBaseName);
@@ -786,15 +861,17 @@ async function getCreatureRequirements(o_find){
 	return result;
 }
 
+/**
+* @desc : Get user info in sync mod (block)
+* @param : o_find - Object - Object used to find the user.
+*/
 async function sync_getUserInfo(o_find){
 
 	var exclude = { "projection" :{
 		'password':0,
 		'current_artefact' :0,
-		'owned_artefacts' :0,
-		'is_admin' :0
+		'owned_artefacts' :0
 	}};
-
 
 	let result = null;
 	const t = await client.connect();
@@ -805,6 +882,11 @@ async function sync_getUserInfo(o_find){
 	return result;
 }
 
+/**
+* @desc : Update the ressources of an user.
+* @param : userID - Object - used to find the user to update
+* @param : creature_name - String - The creature name to add in the user's creature list
+*/
 async function updateUserCreatures(userID,creature_name){
 	let toUpdate = { $push: { owned_creatures: creature_name } };
 	let result = null;
@@ -815,6 +897,11 @@ async function updateUserCreatures(userID,creature_name){
 	const res = await collection.update(userID,toUpdate);
 }
 
+/**
+* @desc : Update the ressources of an user.
+* @param : userID - Object - used to find the user to update
+* @param : ressourceUpdate - List<Ressource> - of the updated ressource (replace old values)
+*/
 async function updateUserRessource(userID,ressourceUpdate){
 	let toUpdate = { $set : { owned_ressources : ressourceUpdate }};
 	let result = null;
