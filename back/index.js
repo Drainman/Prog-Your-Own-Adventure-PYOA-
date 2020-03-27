@@ -24,28 +24,9 @@ const tokenTimer = 86400; //token for 24 hours
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /*								SCHEMA JSON									*/
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-const sh_creatures_artefacts  = {
-	"type" : "object",
-	"properties": {
-		"name": {"type": "string"},
-		"description" :{"type": "string"},
-		"requirement": {
-			"type" : "array",
-			"minItems": 1,
-			"items" : {
-				"type" : "object",
-				"properties" : {
-					"name" : {"type" : "string"},
-					"qty" : {"type" : "integer"}
-				},
-				"required" : ["name","qty"]
-			}
-		}
-	},
-	"required" : ["name","description","requirement"]
-};
-
+const SCH_list = require('./schema');
+const sh_creatures_artefacts = SCH_list.sh_creatures_artefacts;
+const sh_ressource = SCH_list.sh_ressource;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /*								API REQUEST 								*/
@@ -137,6 +118,9 @@ router.get('/auth/me',verifyToken,function(req,res,next){
 * @desc : Login in application. Give a token you have to use for some requests.
 */
 router.post('/auth/login',function(req,res){
+
+	if(req.body.password==undefined || req.body.name==undefined)
+		return res.status(400).send({"status":"KO","message":"400 - Invalid request format."})
 
 	let toFind = {name:req.body.name};
 
@@ -445,6 +429,27 @@ router.get('/ressource', (req, res,next) => {
 	mongoFind_Exclude("ressources",toFind,{},res);
 });
 
+router.post('/ressource', verifyToken, async function(req, res,next){
+	console.log("[INFO] - [GET] => Try to add a new ressource in the system.");
+	let tmpBdy = req.body;
+
+	//Analyse the body
+	let validation_o = validate(tmpBdy,sh_ressource);
+	if(validation_o.errors.length > 0)
+		res.status("400").send({"status":"KO","message":"Invalid request format."});
+	else{
+		//Check if user is admin
+		try{var o_id = new mongo.ObjectID(req.userId);}
+		catch(error){return res.status(400).send({"status":"KO","error":"ID isn't in the right format."});}
+		var toFind = {"_id":o_id};
+
+		let userInfo = await sync_getUserInfo(toFind);
+		if(userInfo.is_admin)
+			insertDB(tmpBdy,"ressources",res);
+		else
+			return res.status(403).send({status:"403 - Forbidden",message:"Only admin can add a ressource."});
+	}
+});
 
 /**
 * @desc : Check all the creatures existing in the system.
@@ -470,7 +475,7 @@ router.get('/creature', (req, res,next) => {
 * @desc : Insert a new creature in the system.
 * @return : The creature object if it is created.
 */
-router.post('/creature', (req, res,next) => {
+router.post('/creature', verifyToken, async function(req, res,next){
 	console.log("[INFO] - [POST] => Try to add a creature.");
 	let tmpBdy = req.body;
 
@@ -478,11 +483,20 @@ router.post('/creature', (req, res,next) => {
 	let validation_o = validate(tmpBdy,sh_creatures_artefacts);
 	if(validation_o.errors.length > 0)
 		res.status("400").send({"status":"KO","message":"Invalid request format."});
-	else
-		insertDB(tmpBdy,"creatures",res);
+	else{
+		//Check if user is admin
+		try{var o_id = new mongo.ObjectID(req.userId);}
+		catch(error){return res.status(400).send({"status":"KO","error":"ID isn't in the right format."});}
+		var toFind = {"_id":o_id};
+
+		let userInfo = await sync_getUserInfo(toFind);
+		if(userInfo.is_admin)
+			insertDB(tmpBdy,"creatures",res);
+		else
+			return res.status(403).send({status:"403 - Forbidden",message:"Only admin can add a creature."});
+	}
+
 });
-
-
 
 /**
 * @desc : Get a specific creature.
@@ -568,7 +582,7 @@ router.get('/artefact', (req, res,next) => {
 * @desc : Insert a new artefact in the system.
 * @return : The creature object if it is created.
 */
-router.post('/artefact', (req, res,next) => {
+router.post('/artefact',verifyToken ,async function(req, res,next) {
 	console.log("[INFO] - [POST] => Try to add a new artefact.");
 	let tmpBdy = req.body;
 
@@ -576,8 +590,18 @@ router.post('/artefact', (req, res,next) => {
 	let validation_o = validate(tmpBdy,sh_creatures_artefacts);
 	if(validation_o.errors.length > 0)
 		res.status("400").send({"status":"KO","message":"Invalid request format."});
-	else
-		insertDB(tmpBdy,"artefacts",res);
+	else{
+		//Check if user is admin
+		try{var o_id = new mongo.ObjectID(req.userId);}
+		catch(error){return res.status(400).send({"status":"KO","error":"ID isn't in the right format."});}
+		var toFind = {"_id":o_id};
+
+		let userInfo = await sync_getUserInfo(toFind);
+		if(userInfo.is_admin)
+			insertDB(tmpBdy,"artefacts",res);
+		else
+			return res.status(403).send({status:"403 - Forbidden",message:"Only admin can add an artefact."});
+	}
 });
 
 /**
