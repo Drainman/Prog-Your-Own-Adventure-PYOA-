@@ -9,9 +9,10 @@ const bodyParser = require("body-parser");
 var Validator = require('jsonschema').Validator;
 var validate = require('jsonschema').validate;
 /* - MONGO CONSTANT */
+const domain_name = "mongodb"
 const mongo = require("mongodb");
 const MongoClient = mongo.MongoClient;
-const mongoURL = "mongodb://localhost:27017/";
+const mongoURL = "mongodb://"+domain_name+":27017/";
 const client = MongoClient(mongoURL,{ useUnifiedTopology: true });
 const dataBaseName = "pyoa";
 /* AUTH CONSTANT */
