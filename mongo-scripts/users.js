@@ -32,7 +32,8 @@ db.users.save({
 		{"name" : "Bamboo","units" : 20000},
 		{"name" : "Metal","units" : 150},
 		{"name" : "Large Gem", "units" : 20},
-		{"name" : "Mud", "units" : 300}
+		{"name" : "Mud", "units" : 300},
+		{"name" : "Rock","units" : 120}
 	],
 	"owned_creatures" : [
 		"Red Panda","Ancient Golem"
