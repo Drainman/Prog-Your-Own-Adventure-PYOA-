@@ -1,3 +1,6 @@
 db.creatures.save({"name" : "Iron Brigadier" , "description" : "A solid soldier ! Cause he is in iron... aha.","requirement":[{"name": "Metal", "units" : 20}]})
 db.creatures.save({"name" : "Ancient Golem" , "description" : "An old creature that will project your home whatever it costs.","requirement":[{"name": "Dust", "units" : 20},{"name": "Rock", "units" : 50}]})
 db.creatures.save({"name" : "Red Panda" , "description" : "The ultimate perfect animal ! Kneel before your master","requirement":[{"name": "Bamboo", "units" : 500},{"name": "Large Gem", "units" : 5}]})
+db.creatures.save({"name" : "Diamond Knight" , "description" : "Shinny !","requirement":[{"name": "Fire Essence", "units" : 5},{"name": "Large Gem", "units" : 5},{"name": "Wind Essence", "units" : 5},{"name": "Water Essence", "units" : 5}]})
+db.creatures.save({"name" : "Guild Colossus" , "description" : "He will protect all your teammate. Against some cookies.","requirement":[{"name": "Fire Essence", "units" : 10},{"name": "Medium Gem", "units" : 20},{"name": "Wind Essence", "units" : 10},{"name": "Rock", "units" : 75}]})
+db.creatures.save({"name" : "Dirty Dirt" , "description" : "A glamour creature. I mean ... for some people.","requirement":[{"name": "Mud", "units" : 250},{"name": "Rock", "units" : 50}]})

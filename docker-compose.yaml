@@ -1,6 +1,21 @@
 version : '3'
 
 services :
+    backend :
+        image : pyoa-node:latest
+        container_name : pyoa_backend
+        working_dir : /app
+        networks :
+            - pyoa-network
+        ports :
+            - "3000:3000"
+        command : node index.js
+        links :
+            - mongodb
+        depends_on :
+            - mongodb
+
+
     mongodb :
         image : mongo:latest
         container_name : mongodb
@@ -15,7 +30,12 @@ services :
             - "./mongo-scripts/creatures.js:/docker-entrypoint-initdb.d/creatures.js"
             - "./mongo-scripts/users.js:/docker-entrypoint-initdb.d/users.js"
             #- "db_pyoa:/data/db"
+        networks :
+            - pyoa-network
 
 # -> Sauvegarde des datas
 #volumes :
 #    db_pyoa:
+
+networks :
+    pyoa-network:
