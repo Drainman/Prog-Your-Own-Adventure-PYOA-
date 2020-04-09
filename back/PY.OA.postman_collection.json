@@ -1,0 +1,1521 @@
+{
+	"info": {
+		"_postman_id": "bf8dfe69-e68a-43e1-90a3-bf95ddbf3d6a",
+		"name": "PY.OA",
+		"description": "Jeux de test pour l'application \"Prog. Your Own Adventure\".",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Init",
+			"item": [
+				{
+					"name": "API Access",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4aca5a2d-bbb5-4379-b1ba-c4ad47e27875",
+								"exec": [
+									"pm.test(\"[200] ~ Get ressources.\",function(){",
+									"  pm.response.to.have.status(200); ",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\" : \"Kurai\",\n\t\"password\" : \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000"
+						},
+						"description": "Test API access."
+					},
+					"response": []
+				},
+				{
+					"name": "DB communication status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3d5f8b6d-c814-407c-ae79-b03d22d4ef0a",
+								"exec": [
+									"pm.test(\"[200] ~ Get ressources.\",function(){",
+									"  pm.response.to.have.status(200); ",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/db_status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"db_status"
+							]
+						},
+						"description": "Test communication between server and DB."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Cahier des Charges",
+			"item": [
+				{
+					"name": "Gestion du Profil",
+					"item": [
+						{
+							"name": "Verify User (Unlogged)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f96ed331-ceed-4064-842e-5c2499fa33e0",
+										"exec": [
+											"pm.test(\"[403] ~ Verify user without token.\",function(){",
+											"    pm.response.to.have.status(403); ",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/auth/me",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"auth",
+										"me"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Login (User)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "968f279d-1217-4486-a1be-7c6a537773bf",
+										"exec": [
+											"pm.test(\"[200] ~ Login with User profile.\",function(){",
+											"  pm.response.to.have.status(200); ",
+											"  //Save the token",
+											"  var jsonData = JSON.parse(responseBody);",
+											"  pm.collectionVariables.set(\"Current_Token\",jsonData.token);",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"name\" : \"Red Panda\",\n\t\"password\" : \"Bamboo\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify User (Logged)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f96ed331-ceed-4064-842e-5c2499fa33e0",
+										"exec": [
+											"pm.test(\"[PARAM] ~ Test user logged.\",function(){",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.name).to.eql(\"Red Panda\");",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-access-token",
+										"value": "{{Current_Token}}",
+										"description": "User Token",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3000/auth/me",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"auth",
+										"me"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Register (autolog)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "33834df3-6ac3-41c2-96ae-bdb9e5543c7e",
+										"exec": [
+											"pm.test(\"[200] ~  User register.\",function(){",
+											"  pm.response.to.have.status(200); ",
+											"  ",
+											"  var jsonData = JSON.parse(responseBody);",
+											"  pm.collectionVariables.set(\"Current_Token\",jsonData.token);",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"name\" : \"PostmanUser\",\n\t\"password\" : \"postman\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/auth/register",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify new User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f96ed331-ceed-4064-842e-5c2499fa33e0",
+										"exec": [
+											"pm.test(\"[PARAM] ~ Verify the new user.\",function(){",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.name).to.eql(\"PostmanUser\");",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"description": "User Token",
+										"key": "x-access-token",
+										"type": "text",
+										"value": "{{Current_Token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3000/auth/me",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"auth",
+										"me"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Forbidden action (Profil)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "1d8d30d7-e55e-42eb-8bbc-e80873544390",
+										"exec": [
+											"pm.test(\"[403] ~ Action unauthorized cause by the wrong profil.\",function(){",
+											"  pm.response.to.have.status(403);",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-access-token",
+										"value": "{{Current_Token}}",
+										"description": "User Token",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"name\" : \"A Monster\",\n\t\"description\" : \"A description\",\n\t\"requirement\" : [{\"name\" : \"Wood\",\"units\" : 1}]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/artefact",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"artefact"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Login (Admin)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "968f279d-1217-4486-a1be-7c6a537773bf",
+										"exec": [
+											"pm.test(\"[200] ~ Login with Admin profile.\",function(){",
+											"  pm.response.to.have.status(200); ",
+											"  //Save the token",
+											"  var jsonData = JSON.parse(responseBody);",
+											"  pm.collectionVariables.set(\"Current_Token\",jsonData.token);",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"name\" : \"Kurai\",\n\t\"password\" : \"admin\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Authoriezd action (Admin)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "1d8d30d7-e55e-42eb-8bbc-e80873544390",
+										"exec": [
+											"pm.test(\"[200] ~ Admin operation success.\",function(){",
+											"  pm.response.to.have.status(200);",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-access-token",
+										"value": "{{Current_Token}}",
+										"description": "User Token",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"name\" : \"A Monster\",\n\t\"description\" : \"A description\",\n\t\"requirement\" : [{\"name\" : \"Wood\",\"units\" : 1}]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3000/artefact",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"artefact"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Connexion - Déconnexion - Register",
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Artefacts - Creatures - Ressources",
+					"item": [
+						{
+							"name": "Admin",
+							"item": [
+								{
+									"name": "Login (Admin)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "968f279d-1217-4486-a1be-7c6a537773bf",
+												"exec": [
+													"pm.test(\"[200] ~ Login with Admin profile.\",function(){",
+													"  pm.response.to.have.status(200); ",
+													"  //Save the token",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  pm.collectionVariables.set(\"Current_Token\",jsonData.token);",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"name\" : \"Kurai\",\n\t\"password\" : \"admin\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:3000/auth/login",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"auth",
+												"login"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "Artefact",
+							"item": [
+								{
+									"name": "Get artefacts",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "2c476fcb-07e6-4c0e-b8ea-a90d4140ff36",
+												"exec": [
+													"pm.test(\"[200] ~ Get artefacts.\",function(){",
+													"  pm.response.to.have.status(200); ",
+													"  ",
+													"",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  //save Paper Crown for future tests",
+													"   for(var i=0;i<jsonData.length;i++){",
+													"        if(jsonData[i].name == \"Paper Crown\"){",
+													"                pm.collectionVariables.set(\"O_PC\",jsonData[i]);",
+													"                pm.collectionVariables.set(\"ID_PC\",jsonData[i]._id)",
+													"        }",
+													"  }",
+													" ",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/artefact",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"artefact"
+											]
+										},
+										"description": "Get some creatures and prepare tests\n"
+									},
+									"response": []
+								},
+								{
+									"name": "Get artefacts with filter",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "eb34ce93-9e04-413b-b351-f4a0e2058656",
+												"exec": [
+													"pm.test(\"[FIND] ~ Get artefacts with filter.\",function(){",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  ",
+													"  for(var i=0;i<jsonData.length;i++)",
+													"    if(jsonData[i].name == \"Paper Crown\")",
+													"        pm.expect(jsonData[i]).to.eql(pm.collectionVariables.get(\"O_PC\"));",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/artefact?name=Paper",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"artefact"
+											],
+											"query": [
+												{
+													"key": "name",
+													"value": "Paper"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get artefact by ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "976d66b3-b947-4c4e-a2e3-1f7ed58bfd38",
+												"exec": [
+													"pm.test(\"[EQ] ~ Get artefact by id.\",function(){",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  ",
+													"  pm.expect(jsonData[0]).to.eql(pm.collectionVariables.get(\"O_PC\"));",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/artefact/{{ID_PC}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"artefact",
+												"{{ID_PC}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get artefact by name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "28c4eeaf-2d6c-4224-854a-ff6c0e1dafed",
+												"exec": [
+													"pm.test(\"[EQ] ~ Get artefact by name.\",function(){",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  ",
+													"  pm.expect(jsonData[0]).to.eql(pm.collectionVariables.get(\"O_PC\"));",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/artefact/Paper Crown?usename=true",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"artefact",
+												"Paper Crown"
+											],
+											"query": [
+												{
+													"key": "usename",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "Creature",
+							"item": [
+								{
+									"name": "Get creatures",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "2c476fcb-07e6-4c0e-b8ea-a90d4140ff36",
+												"exec": [
+													"pm.test(\"[200] ~ Get creatures.\",function(){",
+													"  pm.response.to.have.status(200); ",
+													"  ",
+													"",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  //save Iron Brigadier for future tests",
+													"   for(var i=0;i<jsonData.length;i++){",
+													"        if(jsonData[i].name == \"Iron Brigadier\"){",
+													"                pm.collectionVariables.set(\"O_IB\",jsonData[i]);",
+													"                pm.collectionVariables.set(\"ID_IB\",jsonData[i]._id)",
+													"        }",
+													"  }",
+													" ",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/creature",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"creature"
+											]
+										},
+										"description": "Get some creatures and prepare tests\n"
+									},
+									"response": []
+								},
+								{
+									"name": "Get creatures with filter",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "33804a7e-fec2-4da1-964b-0b0ae1e8edfd",
+												"exec": [
+													"pm.test(\"[FIND] ~ Get creatures with filter.\",function(){",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  ",
+													"  for(var i=0;i<jsonData.length;i++)",
+													"    if(jsonData[i].name == \"Iron Brigadier\")",
+													"        pm.expect(jsonData[i]).to.eql(pm.collectionVariables.get(\"O_IB\"));",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/creature",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"creature"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get creature by ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "28c4eeaf-2d6c-4224-854a-ff6c0e1dafed",
+												"exec": [
+													"pm.test(\"[200] ~ Get creature by id.\",function(){",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  ",
+													"  pm.expect(jsonData[0]).to.eql(pm.variables.get(\"O_IB\"));",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/creature/{{ID_IB}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"creature",
+												"{{ID_IB}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get creature by name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "28c4eeaf-2d6c-4224-854a-ff6c0e1dafed",
+												"exec": [
+													"pm.test(\"[200] ~ Get creature by name.\",function(){",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  ",
+													"  pm.expect(jsonData[0]).to.eql(pm.variables.get(\"O_IB\"));",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/creature/Iron Brigadier?usename=true",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"creature",
+												"Iron Brigadier"
+											],
+											"query": [
+												{
+													"key": "usename",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "Ressource",
+							"item": [
+								{
+									"name": "Get all the ressources",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "40673e46-10c5-4eae-b556-e10a4412ffa4",
+												"exec": [
+													"pm.test(\"[200] ~ Get ressources.\",function(){",
+													"  pm.response.to.have.status(200); ",
+													"",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  var countRarity = 0;",
+													"  //Count number of ressource with the \"very common\" rarity.",
+													"   for(var i=0;i<jsonData.length;i++){",
+													"        if(jsonData[i].rarity == \"Very Common\")",
+													"            countRarity++;",
+													"  }",
+													"  pm.collectionVariables.set(\"int_item_very_common\",countRarity);",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/ressource",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"ressource"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get ressources by rarity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "3b33557a-8f53-4cfe-bb14-c93155b6584e",
+												"exec": [
+													"pm.test(\"[200] ~ Get ressources by rarity.\",function(){",
+													"",
+													"  var jsonData = JSON.parse(responseBody);",
+													"  var countRarity = jsonData.length;",
+													"  ",
+													"  pm.expect(countRarity).to.eql(pm.variables.get(\"int_item_very_common\"));",
+													"})"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/ressource?rarity=Very Common",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"ressource"
+											],
+											"query": [
+												{
+													"key": "rarity",
+													"value": "Very Common"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get ressource by name and rarity",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "86eb480b-13ab-4215-acee-db4945d4e5f4",
+												"exec": [
+													"pm.test(\"[200] ~ Get ressources.\",function(){",
+													"  pm.response.to.have.status(200); ",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://localhost:3000/ressource?name=Fire&rarity=Rare",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3000",
+											"path": [
+												"ressource"
+											],
+											"query": [
+												{
+													"key": "name",
+													"value": "Fire"
+												},
+												{
+													"key": "rarity",
+													"value": "Rare"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"description": "Dossier contenant les tests spécifiques au cahier des charges basiques.",
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Summon",
+			"item": [
+				{
+					"name": "Preparation 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c41aaee8-b609-4017-a42b-117e0de00081",
+								"exec": [
+									"pm.test(\"[200] ~ Login with User profile.\",function(){",
+									"  pm.response.to.have.status(200); ",
+									"  //Save the token",
+									"  var jsonData = JSON.parse(responseBody);",
+									"  pm.collectionVariables.set(\"Mud_ID\",jsonData[0]._id);",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/creature?name=Dirty",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"creature"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "Dirty"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preparation 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c41aaee8-b609-4017-a42b-117e0de00081",
+								"exec": [
+									"pm.test(\"[200] ~ Login with User profile.\",function(){",
+									"  pm.response.to.have.status(200); ",
+									"  //Save the token",
+									"  var jsonData = JSON.parse(responseBody);",
+									"  pm.collectionVariables.set(\"DK_ID\",jsonData[0]._id);",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/creature?name=Diamond Knight",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"creature"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "Diamond Knight"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Summon fail cause bad user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17165811-476a-4f5f-a651-00cfa3b642c2",
+								"exec": [
+									"pm.test(\"[403] ~ Try to summon for an other user.\",function(){",
+									"  pm.response.to.have.status(403); ",
+									"})",
+									"",
+									"pm.test(\"[MSG] ~ Try to summon for an other user.\",function(){",
+									"   var jsonData = JSON.parse(responseBody);",
+									"   pm.expect(jsonData.message).to.eql(\"You aren't the user of this account.\");",
+									"})",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-access-token",
+								"value": "{{Current_Token}}",
+								"description": "User Token",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"creature_id\" : \"{{DK_ID}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/user/{{UserID}}/creature",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"user",
+								"{{UserID}}",
+								"creature"
+							]
+						},
+						"description": "Summon Creature but not enough ressource."
+					},
+					"response": []
+				},
+				{
+					"name": "Login (RedPanda)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "968f279d-1217-4486-a1be-7c6a537773bf",
+								"exec": [
+									"pm.test(\"[200] ~ Login with User profile.\",function(){",
+									"  pm.response.to.have.status(200); ",
+									"  //Save the token",
+									"  var jsonData = JSON.parse(responseBody);",
+									"  pm.collectionVariables.set(\"Current_Token\",jsonData.token);",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\" : \"Red Panda\",\n\t\"password\" : \"Bamboo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify User (RedPanda)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f96ed331-ceed-4064-842e-5c2499fa33e0",
+								"exec": [
+									"pm.test(\"[PARAM] ~ Test user logged.\",function(){",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"UserID\",jsonData._id);",
+									"    ",
+									"    pm.expect(jsonData.name).to.eql(\"Red Panda\");",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"description": "User Token",
+								"key": "x-access-token",
+								"type": "text",
+								"value": "{{Current_Token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/auth/me",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Summon fail cause not enough ressource",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17165811-476a-4f5f-a651-00cfa3b642c2",
+								"exec": [
+									"pm.test(\"[403] ~ Try to summon but user have not enough ressource.\",function(){",
+									"  pm.response.to.have.status(403); ",
+									"})",
+									"",
+									"pm.test(\"[MSG] ~ Try to summon but user have not enough ressource.\",function(){",
+									"   var jsonData = JSON.parse(responseBody);",
+									"   pm.expect(jsonData.message).to.eql(\"You don't have the requirements to summon this creature.\");",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "User Token",
+								"key": "x-access-token",
+								"type": "text",
+								"value": "{{Current_Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"creature_id\" : \"{{DK_ID}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/user/{{UserID}}/creature",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"user",
+								"{{UserID}}",
+								"creature"
+							]
+						},
+						"description": "Summon Creature but not enough ressource."
+					},
+					"response": []
+				},
+				{
+					"name": "Summon Creature OK",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17165811-476a-4f5f-a651-00cfa3b642c2",
+								"exec": [
+									"pm.test(\"[200] ~  Summon monster all OK.\",function(){",
+									"  pm.response.to.have.status(200); ",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "User Token",
+								"key": "x-access-token",
+								"type": "text",
+								"value": "{{Current_Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"creature_id\" : \"{{Mud_ID}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/user/{{UserID}}/creature",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"user",
+								"{{UserID}}",
+								"creature"
+							]
+						},
+						"description": "Summon Creature but not enough ressource."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "4b69c25e-4184-44ee-bc00-66f4e8dff4c9",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "516f494c-dc68-4547-9a84-2614a272734e",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "b4cda531-30a4-425d-91cf-cbc2bccd4501",
+			"key": "Current_Token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVlOGYyMTNkOGFkZDRhNThiZDAyYWYyZiIsImlhdCI6MTU4NjQzODQ3NiwiZXhwIjoxNTg2NTI0ODc2fQ.j-UceUfmpL_8E5Pfk3rP9wmL_bC7nboOBBXlp7OrRPo",
+			"type": "string"
+		},
+		{
+			"id": "0f14ab36-f660-4c68-8738-370532506d75",
+			"key": "UserID",
+			"value": "5e8f213d8add4a58bd02af2f",
+			"type": "string"
+		},
+		{
+			"id": "00ff3996-48af-46af-b4e5-b1ac389495d0",
+			"key": "DK_ID",
+			"value": "5e8f213d865c2858b8d00fd5",
+			"type": "string"
+		},
+		{
+			"id": "169c48d2-05c3-4667-b968-c0445652f17d",
+			"key": "Mud_ID",
+			"value": "5e8f213d865c2858b8d00fd7",
+			"type": "string"
+		},
+		{
+			"id": "d4cde41d-caa3-4356-a054-d9b5fba0813f",
+			"key": "Mud_units",
+			"value": 50,
+			"type": "number"
+		},
+		{
+			"id": "2f458da6-201e-462d-90d6-a203afa40c99",
+			"key": "O_IB",
+			"value": {
+				"_id": "5e8f213d865c2858b8d00fd2",
+				"description": "A solid soldier ! Cause he is in iron... aha.",
+				"name": "Iron Brigadier",
+				"requirement": [
+					{
+						"name": "Metal",
+						"units": 20
+					}
+				]
+			},
+			"type": "any"
+		},
+		{
+			"id": "ca740255-22ec-456e-9d81-da75658f259a",
+			"key": "ID_IB",
+			"value": "5e8f213d865c2858b8d00fd2",
+			"type": "string"
+		},
+		{
+			"id": "086f54cb-d038-4874-8b39-3a7f50517e20",
+			"key": "O_PC",
+			"value": {
+				"_id": "5e8f213d45aa28d0e64ed7a6",
+				"description": "A powerfull crown ! In paper...",
+				"name": "Paper Crown",
+				"requirement": [
+					{
+						"name": "Paper",
+						"units": 50
+					}
+				]
+			},
+			"type": "any"
+		},
+		{
+			"id": "49adde37-9eca-4917-8a5a-86674605e9cc",
+			"key": "ID_PC",
+			"value": "5e8f213d45aa28d0e64ed7a6",
+			"type": "string"
+		},
+		{
+			"id": "3064d430-777c-4ffb-8c21-25cad608c776",
+			"key": "int_item_very_common",
+			"value": 3,
+			"type": "number"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

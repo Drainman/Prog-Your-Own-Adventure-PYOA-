@@ -14,11 +14,14 @@ Summary
 	-	[Requirements](#requirements)
 	-	[Description](#description)
 	-	[Launch the application with docker](#launch-the-application-with-docker)
+		-	[&gt; Run the app](#-build-the-node-image)
 		-	[&gt; Build the node image.](#-build-the-node-image)
 		-	[&gt; Check the app status](#-check-the-app-status)
 		-	[&gt; Cluster deployment](#-cluster-deployment)
 	-	[Launch the application without Docker](#launch-the-application-without-docker)
 		-	[&gt; Run the app](#-run-the-app)
+	-	[Tests](#tests)
+	-	[Documentation](#documentation)
 
 <!--te-->
 
@@ -82,3 +85,15 @@ You can always run the backend with the following this procedure :
 -	Launch the application with : `node back/index.js` or `nodemon back/index.js`.
 -	Try to access to the following URL (GET) : ***http://localhost:3000/***.
 -	If you get a response, you're ready to go !
+
+Tests
+-----
+
+You can run the basics tests to check if the application is properly installing.
+
+Please install "**Postman**" in your system and import the file : `back/PY.OA.postman_collection.json`.
+
+Documentation
+-------------
+
+If you want consult the documentation of the API, please visit the following link :
