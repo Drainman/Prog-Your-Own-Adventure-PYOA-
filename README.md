@@ -52,7 +52,7 @@ Launch the application with docker
 
 Run the following script : `./install.sh`
 
-### > Run the app
+### > Run the app
 
 -	Run the following script : `sudo docker-compose up -d`.
 -	MongoDB will run in the port : **27017**
@@ -96,4 +96,4 @@ Please install "**Postman**" in your system and import the file : `back/PY.OA.po
 Documentation
 -------------
 
-If you want consult the documentation of the API, please visit the following link :
+If you want consult the documentation of the API, please visit the following link : https://app.swaggerhub.com/apis/Drainman/AP_MYOA/1.0.0#/
